@@ -1,0 +1,8 @@
+PUT http://localhost:8080/edit
+Content-Type: application/json
+
+{
+  "id": 0,
+  "text": "Task One",
+  "completed": true
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .input-row {
+      display: flex;
+      margin-bottom: 15px;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .delete-btn {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+    .edit-btn {
+      background: #3498db;
+      border: none;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    .edit-btn:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Task Manager</h2>
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="Новая задача...">
+      <button onclick="addTask()">Добавить</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    async function loadTasks() {
+      const res = await fetch("/get");
+      const tasks = await res.json();
+
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+
+      tasks.forEach(task => {
+        const li = document.createElement("li");
+
+        const span = document.createElement("span");
+        span.textContent = task.text;
+
+        // кнопка удаления
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Удалить";
+        delBtn.className = "delete-btn";
+        delBtn.onclick = () => deleteTask(task.id);
+
+        // кнопка изменения
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Изменить";
+        editBtn.className = "edit-btn";
+        editBtn.onclick = () => editTask(task.id, task.text);
+
+        li.appendChild(span);
+        li.appendChild(editBtn);
+        li.appendChild(delBtn);
+
+        list.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const input = document.getElementById("taskInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      await fetch("/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      input.value = "";
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch("/del", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      loadTasks();
+    }
+
+    async function editTask(id, oldText) {
+    const newText = prompt("Измените задачу:", oldText);
+    if (!newText) return;
+
+    await fetch("/edit", {
+        method: "PUT",           // <- важно
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, text: newText })
+    });
+
+    loadTasks(); // обновляем список после изменения
+    }
+
+
+    // загружаем задачи при старте
+    loadTasks();
+  </script>
+</body>
+</html>
