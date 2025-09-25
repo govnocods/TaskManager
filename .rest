@@ -1,8 +1,8 @@
-PUT http://localhost:8080/edit
+POST http://localhost:8080/add
 Content-Type: application/json
 
 {
-  "id": 0,
+  "id": 12,
   "text": "Task One",
   "completed": true
 }

@@ -1,14 +1,15 @@
 package models
 
-import "sync"
+import (
+	"sync"
+)
 
 type Task struct {
-	Id        int    `json:"id"`
+	Id        int64  `json:"id"`
 	Text      string `json:"text"`
 	Completed bool   `json:"completed"`
 }
 
 var (
-	Tasks []Task
-	Mu    sync.Mutex
+	Tasks sync.Map
 )
