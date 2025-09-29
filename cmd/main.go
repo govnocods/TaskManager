@@ -5,11 +5,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/govnocods/TaskManager/internal/db"
 	"github.com/govnocods/TaskManager/internal/handlers"
 )
 
 func main() {
 	mux := http.NewServeMux()
+
+	db.Connect()
+	defer db.CloseDB()
 
 	mux.HandleFunc("/get", handlers.GetTaskHandler)
 	mux.HandleFunc("/add", handlers.AddTaskHandler)

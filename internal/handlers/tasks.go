@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/govnocods/TaskManager/internal/db"
 	"github.com/govnocods/TaskManager/models"
-	"github.com/govnocods/TaskManager/utils/id"
 )
+
+func respondJSON(w http.ResponseWriter, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
 
 func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -21,29 +26,15 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task := models.Task{
-		Id:        id.NextID(),
-		Text:      req.Text,
-		Completed: false,
-	}
+	db.AddTask(req)
+	tasks := db.GetTasks()
 
-	models.Tasks.Store(task.Id, task)
-
-	var allTasks []models.Task
-	models.Tasks.Range(func(key, value any) bool {
-		if task, ok := value.(models.Task); ok {
-			allTasks = append(allTasks, task)
-		}
-		return true
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(allTasks)
+	respondJSON(w, tasks)
 }
 
 func DelTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusBadRequest)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 
 	var req models.Task
@@ -52,12 +43,14 @@ func DelTaskHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "JSON parsing error", http.StatusBadRequest)
 		return
 	}
-	models.Tasks.Delete(req.Id)
+
+	db.DeleteTask(req)
+	respondJSON(w, req)
 }
 
 func EditTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusBadRequest)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -66,23 +59,16 @@ func EditTaskHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
 		return
 	}
-
-	if _, ok := models.Tasks.Load(req.Id); ok {
-		models.Tasks.Store(req.Id, req)
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(req)
-		return
-	}
+	db.EditTask(req)
+	w.WriteHeader(http.StatusOK)
+	respondJSON(w, req)
 }
 
 func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var tasks []models.Task
-	models.Tasks.Range(func(key, value any) bool {
-		if task, ok := value.(models.Task); ok {
-			tasks = append(tasks, task)
-		}
-		return true
-	})
-	json.NewEncoder(w).Encode(tasks)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+
+	tasks := db.GetTasks()
+	respondJSON(w, tasks)
 }
